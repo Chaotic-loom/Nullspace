@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use tokio::net::{TcpListener, TcpStream};
 use serde_json::json;
 use tokio::io::{AsyncWriteExt};
@@ -90,7 +91,10 @@ async fn handle_status(mut stream: TcpStream) -> anyhow::Result<()> {
     println!("Packet length: {:?}", packet_length);
     println!("Packet ID: {:?}", packet_id);
 
-    // TODO: Here we should check if the packet_id is handshake to continue
+    // If not handshake, end connection
+    if packet_id != VarInt::from(0x00) {
+        return Err(anyhow!("Unexpected packet ID during Status phase: Got {:?}. Expected 0x00.", packet_id));
+    }
 
     // Prepare JSON Response
     let status_response = json!({
