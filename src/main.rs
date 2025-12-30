@@ -4,7 +4,7 @@ use tokio::net::{TcpListener, TcpStream};
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use uuid::Uuid;
-use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
+use crate::data_types::{BufferWrite, PacketWrite, StreamExt, StreamWrite};
 use crate::data_types::game_profile::GameProfile;
 use crate::data_types::i_byte::Byte;
 use crate::data_types::identifier::Identifier;
@@ -173,6 +173,19 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
     println!("Enable text filtering: {:?}", enable_text_filtering);
     println!("Allow server listings: {:?}", allow_server_listings);
     println!("Particle status: {:?}", particle_status);
+
+    // 7
+    let mut payload_buffer = Vec::new();
+    "Nullspace".to_string().write_to(&mut payload_buffer);
+
+    let mut packet_body = Vec::new();
+
+    let identifier = Identifier::new("minecraft", "brand");
+    identifier.write_to(&mut packet_body);
+
+    RawBytes(payload_buffer).write_to(&mut packet_body);
+
+    send_packet(&mut stream, 0x01, &packet_body).await?;
 
     Ok(())
 }
