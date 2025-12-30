@@ -209,6 +209,17 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     send_packet(&mut stream, 0x0E, &buffer).await?;
 
+    // 10
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    let known_packs: Vec<KnownPack> = stream.read_type().await?;
+
+    println!("Known packs: {:?}", known_packs);
+
     Ok(())
 }
 
