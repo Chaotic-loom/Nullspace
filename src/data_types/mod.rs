@@ -15,6 +15,8 @@ use async_trait::async_trait;
 use anyhow::Result;
 use tokio::io::AsyncWriteExt;
 
+// Encoding & Decoding
+
 #[async_trait]
 pub trait PacketWrite {
     fn write_to(&self, buf: &mut Vec<u8>);
