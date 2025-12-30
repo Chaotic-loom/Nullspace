@@ -76,10 +76,15 @@ async fn handle_connection(mut stream: TcpStream) -> anyhow::Result<()> {
         if next_state == VarInt::from(1) {
             return handle_status(stream).await;
         } else if next_state == VarInt::from(2) {
-            // TODO: Login implementation
-            return Ok(());
+            return handle_login(stream).await;
         }
     }
+
+    Ok(())
+}
+
+async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
+
 
     Ok(())
 }
@@ -99,8 +104,8 @@ async fn handle_status(mut stream: TcpStream) -> anyhow::Result<()> {
     // Prepare JSON Response
     let status_response = json!({
         "version": {
-            "name": "1.20.1",
-            "protocol": 763
+            "name": "1.21.11",
+            "protocol": 774
         },
         "players": {
             "max": 1000,
