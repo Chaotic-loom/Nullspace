@@ -1,10 +1,11 @@
 use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use serde_json::json;
+use tokio::io::{AsyncWriteExt};
+use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
 
-mod utils;
-use utils::{read_varint, write_varint};
-use crate::utils::{read_i64, read_string, read_u16, send_packet, write_i64, write_string};
+mod data_types;
+
+use crate::data_types::var_int::VarInt;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,42 +22,59 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
+/// # Send packet
+/// Generic Packet Sender
+/// 1. Writes Packet ID (VarInt) to a buffer
+/// 2. Appends Data
+/// 3. Calculates total length (ID length + Data length)
+/// 4. Prefixes the total length (VarInt)
+/// 5. Sends it all
+pub async fn send_packet(socket: &mut TcpStream, packet_id: i32, body: &[u8]) -> anyhow::Result<()> {
+    let mut packet_buffer = Vec::new();
+
+    // Write Packet ID
+    packet_buffer.write_type(VarInt(packet_id));
+
+    // Write Body
+    packet_buffer.extend_from_slice(body);
+
+    // Send Total Length + Content
+    socket.write_stream_type(VarInt(packet_buffer.len() as i32)).await?;
+    socket.write_all(&packet_buffer).await?;
+
+    Ok(())
+}
+
 // Packet length
 // Packet ID: 0x00
 // Protocol Version: VarInt
 // Server Address: String(255)
 // Server Port: Unsigned Short
 // Intent: VarInt Enum (1 = Status, 2 = Login, 3 = Transfer)
-async fn handle_connection(mut socket: TcpStream) -> anyhow::Result<()> {
+async fn handle_connection(mut stream: TcpStream) -> anyhow::Result<()> {
     println!("Connection established");
 
-    let packet_length = read_varint(&mut socket).await?;
-    let packet_id = read_varint(&mut socket).await?;
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
 
-    println!("Packet length: {}", packet_length);
-    println!("Packet ID: {}", packet_id);
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
 
     // HANDSHAKE PACKET
-    if packet_id == 0x00 {
-        let protocol_version = read_varint(&mut socket).await?;
+    if packet_id == VarInt::from(0x00) {
+        let protocol_version: VarInt = stream.read_type().await?;
+        let server_address: String = stream.read_type().await?;
+        let port: u16 = stream.read_type().await?;
+        let next_state: VarInt = stream.read_type().await?;
 
-        // Server Address (String)
-        let server_address = read_string(&mut socket).await?;
-
-        // Server Port (Unsigned Short)
-        let port = read_u16(&mut socket).await?;
-
-        // Intent (1 = Status, 2 = Login, 3 = Transfer)
-        let next_state = read_varint(&mut socket).await?;
-
-        println!("Protocol version: {}", protocol_version);
+        println!("Protocol version: {:?}", protocol_version);
         println!("Server address: {}", server_address);
         println!("Port: {}", port);
-        println!("Next state: {}", next_state);
+        println!("Next state: {:?}", next_state);
 
-        if next_state == 1 {
-            return handle_status(socket).await;
-        } else if next_state == 2 {
+        if next_state == VarInt::from(1) {
+            return handle_status(stream).await;
+        } else if next_state == VarInt::from(2) {
             // TODO: Login implementation
             return Ok(());
         }
@@ -65,12 +83,14 @@ async fn handle_connection(mut socket: TcpStream) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_status(mut socket: TcpStream) -> anyhow::Result<()> {
-    let packet_length = read_varint(&mut socket).await?;
-    let packet_id = read_varint(&mut socket).await?;
+async fn handle_status(mut stream: TcpStream) -> anyhow::Result<()> {
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
 
-    println!("Packet length: {}", packet_length);
-    println!("Packet ID: {}", packet_id);
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    // TODO: Here we should check if the packet_id is handshake to continue
 
     // Prepare JSON Response
     let status_response = json!({
@@ -91,29 +111,29 @@ async fn handle_status(mut socket: TcpStream) -> anyhow::Result<()> {
     let json_str = serde_json::to_string(&status_response)?;
 
     // Create the body
-    let mut response_body = Vec::new();
-    write_string(&json_str, &mut response_body);
+    let mut response_body_buffer = Vec::new();
+    response_body_buffer.write_type(json_str);
 
-    println!("Response body: {:?}", response_body);
+    println!("Response body: {:?}", response_body_buffer);
 
     // Send Packet 0x00 (Response)
-    send_packet(&mut socket, 0x00, &response_body).await?;
+    send_packet(&mut stream, 0x00, &response_body_buffer).await?;
 
     // HANDLE PING/PONG
     // Client sends Packet 0x01 (Ping) with a Long payload
-    let _len = read_varint(&mut socket).await?;
-    let packet_id = read_varint(&mut socket).await?;
+    let _packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
 
-    if packet_id == 0x01 {
+    if packet_id == VarInt::from(0x01) {
         // Read the Long (payload)
-        let payload = read_i64(&mut socket).await?;
+        let payload: i64 = stream.read_type().await?;
 
         // Write the Long back (Echo)
-        let mut pong_body = Vec::new();
-        write_i64(payload, &mut pong_body);
+        let mut pong_body_buffer = Vec::new();
+        pong_body_buffer.write_type(payload);
 
         // Send Packet 0x01 (Pong)
-        send_packet(&mut socket, 0x01, &pong_body).await?;
+        send_packet(&mut stream, 0x01, &pong_body_buffer).await?;
     }
 
     Ok(())
