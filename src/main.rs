@@ -196,6 +196,19 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     send_packet(&mut stream, 0x0C, &buffer).await?;
 
+    //9
+    let mut buffer = Vec::new();
+
+    buffer.write_type(vec![
+        KnownPack {
+            namespace: "minecraft".to_string(),
+            id: "core".to_string(),
+            version: "1.21.11".to_string(),
+        }
+    ]);
+
+    send_packet(&mut stream, 0x0E, &buffer).await?;
+
     Ok(())
 }
 
