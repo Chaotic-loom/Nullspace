@@ -1,3 +1,4 @@
+use std::io::Cursor;
 use anyhow::anyhow;
 use tokio::net::{TcpListener, TcpStream};
 use serde_json::json;
@@ -7,6 +8,7 @@ use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
 use crate::data_types::game_profile::GameProfile;
 use crate::data_types::identifier::Identifier;
 use crate::data_types::known_pack::KnownPack;
+use crate::data_types::raw_bytes::RawBytes;
 
 mod data_types;
 
@@ -121,14 +123,21 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     // 5
     let packet_length: VarInt = stream.read_type().await?;
-    let packet_id: VarInt = stream.read_type().await?;
+
+    let mut packet_buffer = vec![0u8; packet_length.0 as usize];
+    stream.read_exact(&mut packet_buffer).await?;
+    let mut cursor = Cursor::new(packet_buffer);
+
+    let packet_id: VarInt = cursor.read_type().await?;
 
     println!("Packet length: {:?}", packet_length);
     println!("Packet ID: {:?}", packet_id);
 
-    let channel_identifier: Identifier = stream.read_type().await?;
+    let channel_identifier: Identifier = cursor.read_type().await?;
+    let data: RawBytes = cursor.read_type().await?;
 
     println!("Channel identifier: {:?}", channel_identifier);
+    println!("Data: {:?}", data);
 
     Ok(())
 }
