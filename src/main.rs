@@ -84,7 +84,8 @@ async fn handle_connection(mut stream: TcpStream) -> anyhow::Result<()> {
 }
 
 async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
-
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
 
     Ok(())
 }
