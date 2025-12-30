@@ -12,6 +12,7 @@ mod uuid;
 mod prefixed_array;
 pub(crate) mod game_profile;
 pub(crate) mod known_pack;
+pub(crate) mod identifier;
 
 use tokio::io::{AsyncRead};
 use async_trait::async_trait;

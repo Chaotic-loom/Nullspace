@@ -5,6 +5,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use uuid::Uuid;
 use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
 use crate::data_types::game_profile::GameProfile;
+use crate::data_types::identifier::Identifier;
 use crate::data_types::known_pack::KnownPack;
 
 mod data_types;
@@ -119,30 +120,15 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
     println!("Packet ID: {:?}", packet_id);
 
     // 5
-    let mut buffer = Vec::new();
-
-    buffer.write_type(vec![
-        KnownPack {
-            namespace: "minecraft".to_string(),
-            id: "core".to_string(),
-            version: "1.21.11".to_string(),
-        }
-    ]);
-
-    send_packet(&mut stream, 0x0E, &buffer).await?;
-
-    // 6
     let packet_length: VarInt = stream.read_type().await?;
     let packet_id: VarInt = stream.read_type().await?;
 
     println!("Packet length: {:?}", packet_length);
     println!("Packet ID: {:?}", packet_id);
 
-    println!("Packet ID: {:?}", packet_id);
+    let channel_identifier: Identifier = stream.read_type().await?;
 
-    //let known_packs: Vec<KnownPack> = stream.read_type().await?;
-
-    //println!("Known packs: {:?}", known_packs);
+    println!("Channel identifier: {:?}", channel_identifier);
 
     Ok(())
 }
