@@ -1,8 +1,11 @@
 use anyhow::anyhow;
 use tokio::net::{TcpListener, TcpStream};
 use serde_json::json;
-use tokio::io::{AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use uuid::Uuid;
 use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
+use crate::data_types::game_profile::GameProfile;
+use crate::data_types::known_pack::KnownPack;
 
 mod data_types;
 
@@ -84,8 +87,62 @@ async fn handle_connection(mut stream: TcpStream) -> anyhow::Result<()> {
 }
 
 async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
+    // 2
     let packet_length: VarInt = stream.read_type().await?;
     let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    let username: String = stream.read_type().await?;
+    let uuid: Uuid = stream.read_type().await?;
+
+    println!("Username: {:?}", username);
+    println!("UUID: {:?}", uuid);
+
+    // 3
+    let mut buffer = Vec::new();
+
+    buffer.write_type(GameProfile {
+        uuid,
+        username,
+        properties: Vec::new(),
+    });
+
+    send_packet(&mut stream, 0x02, &buffer).await?;
+
+    // 4
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    // 5
+    let mut buffer = Vec::new();
+
+    buffer.write_type(vec![
+        KnownPack {
+            namespace: "minecraft".to_string(),
+            id: "core".to_string(),
+            version: "1.21.11".to_string(),
+        }
+    ]);
+
+    send_packet(&mut stream, 0x0E, &buffer).await?;
+
+    // 6
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    println!("Packet ID: {:?}", packet_id);
+
+    //let known_packs: Vec<KnownPack> = stream.read_type().await?;
+
+    //println!("Known packs: {:?}", known_packs);
 
     Ok(())
 }

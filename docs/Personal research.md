@@ -64,3 +64,8 @@ S = Servidor
     20. portal_cooldown: VarInt
     21. sea_level: VarInt
     22. enforces_secure_chat: Boolean
+
+GameProfile:
+- uuid: UUID
+- username: String(16)
+- properties: { name: String(64), value: String(32767), signature: Prefixed Optional String(1024) } → Prefixed Array

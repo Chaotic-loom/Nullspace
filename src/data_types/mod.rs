@@ -9,6 +9,9 @@ mod i_long;
 mod float;
 mod double;
 mod uuid;
+mod prefixed_array;
+pub(crate) mod game_profile;
+pub(crate) mod known_pack;
 
 use tokio::io::{AsyncRead};
 use async_trait::async_trait;
@@ -64,5 +67,34 @@ impl<W: tokio::io::AsyncWrite + Unpin + Send> StreamWrite for W {
 
         self.write_all(&buf).await?;
         Ok(())
+    }
+}
+
+// Optional signatures
+
+impl<T: PacketWrite> PacketWrite for Option<T> {
+    fn write_to(&self, buf: &mut Vec<u8>) {
+        match self {
+            Some(val) => {
+                true.write_to(buf);
+                val.write_to(buf);
+            }
+            None => {
+                false.write_to(buf);
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl<T: PacketRead + Send> PacketRead for Option<T> {
+    async fn read_from<R: AsyncRead + Unpin + Send>(stream: &mut R) -> Result<Self> {
+        let has_value = bool::read_from(stream).await?;
+        if has_value {
+            let val = T::read_from(stream).await?;
+            Ok(Some(val))
+        } else {
+            Ok(None)
+        }
     }
 }
