@@ -3,7 +3,7 @@ mod boolean;
 mod u_short;
 mod i_integer;
 mod string;
-mod byte;
+pub(crate) mod u_byte;
 mod i_short;
 mod i_long;
 mod float;
@@ -14,6 +14,7 @@ pub(crate) mod game_profile;
 pub(crate) mod known_pack;
 pub(crate) mod identifier;
 pub(crate) mod raw_bytes;
+pub(crate) mod i_byte;
 
 use tokio::io::{AsyncRead};
 use async_trait::async_trait;

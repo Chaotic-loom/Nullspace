@@ -6,9 +6,11 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use uuid::Uuid;
 use crate::data_types::{BufferWrite, StreamExt, StreamWrite};
 use crate::data_types::game_profile::GameProfile;
+use crate::data_types::i_byte::Byte;
 use crate::data_types::identifier::Identifier;
 use crate::data_types::known_pack::KnownPack;
 use crate::data_types::raw_bytes::RawBytes;
+use crate::data_types::u_byte::UnsignedByte;
 
 mod data_types;
 
@@ -138,6 +140,39 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     println!("Channel identifier: {:?}", channel_identifier);
     println!("Data: {:?}", data);
+
+    if channel_identifier == "minecraft:brand".parse()? {
+        let mut brand_cursor = Cursor::new(data.0);
+        let brand_name: String = brand_cursor.read_type().await?;
+        println!("Client Brand: {}", brand_name);
+    }
+
+    // 6
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    let locale: String = stream.read_type().await?;
+    let view_distance: Byte = stream.read_type().await?;
+    let chat_mode: VarInt = stream.read_type().await?;
+    let chat_colors: bool = stream.read_type().await?;
+    let displayed_skin_parts: UnsignedByte = stream.read_type().await?;
+    let main_hand: VarInt = stream.read_type().await?;
+    let enable_text_filtering: bool = stream.read_type().await?;
+    let allow_server_listings: bool = stream.read_type().await?;
+    let particle_status: VarInt = stream.read_type().await?;
+
+    println!("Locale: {:?}", locale);
+    println!("View distance: {:?}", view_distance);
+    println!("Chat mode: {:?}", chat_mode);
+    println!("Chat colors: {:?}", chat_colors);
+    println!("Displayed skin parts: {:?}", displayed_skin_parts);
+    println!("Main hand: {:?}", main_hand);
+    println!("Enable text filtering: {:?}", enable_text_filtering);
+    println!("Allow server listings: {:?}", allow_server_listings);
+    println!("Particle status: {:?}", particle_status);
 
     Ok(())
 }

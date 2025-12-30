@@ -2,17 +2,20 @@ use async_trait::async_trait;
 use tokio::io::{AsyncRead, AsyncReadExt};
 use crate::data_types::{PacketRead, PacketWrite};
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct UnsignedByte(pub u8);
+
 #[async_trait]
-impl PacketRead for u8 {
+impl PacketRead for UnsignedByte {
     async fn read_from<R: AsyncRead + Unpin + Send>(stream: &mut R) -> anyhow::Result<Self> {
         let mut buf = [0u8; 1];
         stream.read_exact(&mut buf).await?;
-        Ok(buf[0])
+        Ok(UnsignedByte(buf[0]))
     }
 }
 
-impl PacketWrite for u8 {
+impl PacketWrite for UnsignedByte {
     fn write_to(&self, buf: &mut Vec<u8>) {
-        buf.push(*self);
+        buf.push(self.0);
     }
 }
