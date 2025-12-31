@@ -227,11 +227,46 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     send_all_registries(&mut stream).await?;
 
-    //13
+    // 13
     println!("Sending 'Finish configuration'!");
 
     let buf = Vec::new();
     send_packet(&mut stream, 0x03, &buf).await?;
+
+    // 14
+    let packet_length: VarInt = stream.read_type().await?;
+    let packet_id: VarInt = stream.read_type().await?;
+
+    println!("Packet length: {:?}", packet_length);
+    println!("Packet ID: {:?}", packet_id);
+
+    // 15
+    let mut buffer = Vec::new();
+
+    buffer.write_type(2_i32);
+    buffer.write_type(false);
+    buffer.write_type(vec![
+        Identifier::new("minecraft", "overworld")
+    ]);
+    buffer.write_type(VarInt::from(1000));
+    buffer.write_type(VarInt::from(10));
+    buffer.write_type(VarInt::from(10));
+    buffer.write_type(false);
+    buffer.write_type(true);
+    buffer.write_type(false);
+    buffer.write_type(VarInt::from(0));
+    buffer.write_type(Identifier::new("minecraft", "overworld"));
+    buffer.write_type(0_i64);
+    buffer.write_type(UnsignedByte(1));
+    buffer.write_type(Byte(0));
+    buffer.write_type(false); // debug world, true deactives the ability to modify the world, this could be usefull ofr testing i gues
+    buffer.write_type(false);
+    buffer.write_type(false);
+    buffer.write_type(VarInt::from(0));
+    buffer.write_type(VarInt::from(64));
+    buffer.write_type(true);
+
+    send_packet(&mut stream, 0x30, &buffer).await?;
 
     // Debug extra connection time
     sleep(5).await;
@@ -268,6 +303,10 @@ pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
         let name = filename.as_ref();
 
         if !whitelist.contains(name) {
+            continue;
+        }
+
+        if name == "packet_tags.bin" {
             continue;
         }
 
