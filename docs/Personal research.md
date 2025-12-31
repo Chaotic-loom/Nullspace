@@ -53,9 +53,11 @@ S = Servidor
 11. S manda "Registry data - 0x07" multiples veces con estos datos:
     1. registry_id: Identifier
     2. entries: {entry_id: Identifier, data: Prefixed Optional NBT} → Prefixed array
-12. S manda "Finish configuration - 0x03" vacío
-13. C manda "Acknowledge finish configuration - 0x03" vacío
-14. S manda "Login (play) - 0x30" con estos datos:
+12. S manda un "Update tags - 0x0D" con estos datos:
+    1. tagged_registries: { registry: Identifier, tags: Prefixed Array of Tag } → Prefixed Array
+13. S manda "Finish configuration - 0x03" vacío
+14. C manda "Acknowledge finish configuration - 0x03" vacío
+15. S manda "Login (play) - 0x30" con estos datos:
     1. entity_id: Int
     2. is_hardcore: Boolean
     3. dimension_names: Prefixed array of Identifiers
