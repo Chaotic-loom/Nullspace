@@ -222,13 +222,12 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     println!("Known packs: {:?}", known_packs);
 
-    // 11
+    // 11 & 12
     println!("Sending registries!");
 
     send_all_registries(&mut stream).await?;
 
-    //12
-    sleep(5).await;
+    //13
     println!("Sending 'Finish configuration'!");
 
     let buf = Vec::new();
@@ -261,8 +260,8 @@ pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
         "minecraft_wolf_sound_variant.bin",
         "minecraft_painting_variant.bin",
         "minecraft_zombie_nautilus_variant.bin",
-        //"minecraft_timeline.bin",
-        //"minecraft_tags_timeline.bin"
+        "minecraft_timeline.bin",
+        //"minecraft_tags_timeline.bin",
     ]);
 
     for filename in RegistryData::iter() {
@@ -276,6 +275,12 @@ pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
             send_packet(stream, 0x07, &file.data).await?;
             println!("Sent registry: {}", name);
         }
+    }
+
+    // Sends the "Update tags - 0x0D" packet
+    if let Some(file) = RegistryData::get("packet_tags.bin") {
+        println!("Sending Tag Update...");
+        send_packet(stream, 0x0D, &file.data).await?;
     }
 
     Ok(())
