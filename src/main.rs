@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::Cursor;
 use anyhow::anyhow;
 use tokio::net::{TcpListener, TcpStream};
@@ -227,26 +228,53 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
     send_all_registries(&mut stream).await?;
 
     //12
+    sleep(5).await;
     println!("Sending 'Finish configuration'!");
 
     let buf = Vec::new();
     send_packet(&mut stream, 0x03, &buf).await?;
 
     // Debug extra connection time
-    println!("Keeping connection alive for 5 seconds...");
-    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    sleep(5).await;
 
     Ok(())
+}
+
+pub async fn sleep(seconds: u64) {
+    println!("Sleeping for {} seconds...", seconds);
+    tokio::time::sleep(tokio::time::Duration::from_secs(seconds)).await;
 }
 
 pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
     println!("Sending Registry Data...");
 
+    let whitelist: HashSet<&'static str> = HashSet::from([
+        "minecraft_damage_type.bin",
+        "minecraft_worldgen_biome.bin",
+        "minecraft_dimension_type.bin",
+        "minecraft_cat_variant.bin",
+        "minecraft_chicken_variant.bin",
+        "minecraft_cow_variant.bin",
+        "minecraft_frog_variant.bin",
+        "minecraft_pig_variant.bin",
+        "minecraft_wolf_variant.bin",
+        "minecraft_wolf_sound_variant.bin",
+        "minecraft_painting_variant.bin",
+        "minecraft_zombie_nautilus_variant.bin",
+        //"minecraft_timeline.bin",
+        //"minecraft_tags_timeline.bin"
+    ]);
+
     for filename in RegistryData::iter() {
-        if let Some(file) = RegistryData::get(filename.as_ref()) {
+        let name = filename.as_ref();
+
+        if !whitelist.contains(name) {
+            continue;
+        }
+
+        if let Some(file) = RegistryData::get(name) {
             send_packet(stream, 0x07, &file.data).await?;
-            println!("Sent registry: {}", filename);
-            //println!("Data: {:?}", &file.data)
+            println!("Sent registry: {}", name);
         }
     }
 
