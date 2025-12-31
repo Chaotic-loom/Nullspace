@@ -10,6 +10,7 @@ use crate::data_types::i_byte::Byte;
 use crate::data_types::identifier::Identifier;
 use crate::data_types::known_pack::KnownPack;
 use crate::data_types::raw_bytes::RawBytes;
+use crate::data_types::registries::RegistryData;
 use crate::data_types::u_byte::UnsignedByte;
 
 mod data_types;
@@ -219,6 +220,31 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
     let known_packs: Vec<KnownPack> = stream.read_type().await?;
 
     println!("Known packs: {:?}", known_packs);
+
+    // 11
+    println!("Sending registries!");
+
+    send_all_registries(&mut stream).await?;
+
+    //12
+    println!("Sending 'Finish configuration'!");
+
+    let buf = Vec::new();
+    send_packet(&mut stream, 0x03, &buf).await?;
+
+    Ok(())
+}
+
+pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
+    println!("Sending Registry Data...");
+
+    for filename in RegistryData::iter() {
+        if let Some(file) = RegistryData::get(filename.as_ref()) {
+            send_packet(stream, 0x07, &file.data).await?;
+            println!("Sent registry: {}", filename);
+            //println!("Data: {:?}", &file.data)
+        }
+    }
 
     Ok(())
 }

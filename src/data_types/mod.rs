@@ -15,6 +15,7 @@ pub(crate) mod known_pack;
 pub(crate) mod identifier;
 pub(crate) mod raw_bytes;
 pub(crate) mod i_byte;
+pub(crate) mod registries;
 
 use tokio::io::{AsyncRead};
 use async_trait::async_trait;
