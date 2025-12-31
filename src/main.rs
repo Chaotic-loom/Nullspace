@@ -232,6 +232,10 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
     let buf = Vec::new();
     send_packet(&mut stream, 0x03, &buf).await?;
 
+    // Debug extra connection time
+    println!("Keeping connection alive for 5 seconds...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+
     Ok(())
 }
 
