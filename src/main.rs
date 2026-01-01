@@ -268,6 +268,22 @@ async fn handle_login(mut stream: TcpStream) -> anyhow::Result<()> {
 
     send_packet(&mut stream, 0x30, &buffer).await?;
 
+    // Send "Synchronize Player Position - 0x46"
+    let mut buffer = Vec::new();
+
+    buffer.write_type(VarInt::from(0));
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f64);
+    buffer.write_type(0_f32);
+    buffer.write_type(0_f32);
+    buffer.write_type(0x0001_i32);
+
+    send_packet(&mut stream, 0x46, &buffer).await?;
+
     // Debug extra connection time
     sleep(5).await;
 
