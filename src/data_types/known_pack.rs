@@ -1,4 +1,5 @@
-use crate::data_types::{PacketRead, PacketWrite};
+use std::io::Read;
+use crate::data_types::{FieldRead, PacketRead, PacketWrite};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct KnownPack {
@@ -19,9 +20,19 @@ impl PacketWrite for KnownPack {
 impl PacketRead for KnownPack {
     async fn read_from<R: tokio::io::AsyncRead + Unpin + Send>(stream: &mut R) -> anyhow::Result<Self> {
         Ok(KnownPack {
-            namespace: String::read_from(stream).await?,
-            id: String::read_from(stream).await?,
-            version: String::read_from(stream).await?,
+            namespace: <String as PacketRead>::read_from(stream).await?,
+            id: <String as PacketRead>::read_from(stream).await?,
+            version: <String as PacketRead>::read_from(stream).await?,
+        })
+    }
+}
+
+impl FieldRead for KnownPack {
+    fn read_from<R: Read>(stream: &mut R) -> anyhow::Result<Self> {
+        Ok(KnownPack {
+            namespace: <String as FieldRead>::read_from(stream)?,
+            id: <String as FieldRead>::read_from(stream)?,
+            version: <String as FieldRead>::read_from(stream)?,
         })
     }
 }

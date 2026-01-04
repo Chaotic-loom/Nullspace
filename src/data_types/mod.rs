@@ -16,7 +16,9 @@ pub(crate) mod identifier;
 pub(crate) mod raw_bytes;
 pub(crate) mod i_byte;
 pub(crate) mod registries;
+pub(crate) mod position;
 
+use std::io::Read;
 use tokio::io::{AsyncRead};
 use async_trait::async_trait;
 use anyhow::Result;
@@ -93,12 +95,41 @@ impl<T: PacketWrite> PacketWrite for Option<T> {
 #[async_trait]
 impl<T: PacketRead + Send> PacketRead for Option<T> {
     async fn read_from<R: AsyncRead + Unpin + Send>(stream: &mut R) -> Result<Self> {
-        let has_value = bool::read_from(stream).await?;
+        let has_value = <bool as PacketRead>::read_from(stream).await?;
         if has_value {
             let val = T::read_from(stream).await?;
             Ok(Some(val))
         } else {
             Ok(None)
         }
+    }
+}
+
+impl<T: FieldRead> FieldRead for Option<T> {
+    fn read_from<R: Read>(stream: &mut R) -> Result<Self> {
+        let has_value = <bool as FieldRead>::read_from(stream)?;
+        if has_value {
+            let val = T::read_from(stream)?;
+            Ok(Some(val))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+// 1. Define a Sync version of PacketRead
+pub trait FieldRead: Sized {
+    fn read_from<R: Read>(reader: &mut R) -> anyhow::Result<Self>;
+}
+
+// 2. Define a Sync Extension (like your StreamExt)
+pub trait BufferReadExt {
+    fn read_field<T: FieldRead>(&mut self) -> anyhow::Result<T>;
+}
+
+// 3. Implement the extension for any Sync Reader (like Cursor)
+impl<R: Read> BufferReadExt for R {
+    fn read_field<T: FieldRead>(&mut self) -> anyhow::Result<T> {
+        T::read_from(self)
     }
 }

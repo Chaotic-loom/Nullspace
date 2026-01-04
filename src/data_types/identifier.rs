@@ -1,9 +1,10 @@
 use std::fmt;
+use std::io::Read;
 use std::str::FromStr;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use tokio::io::AsyncRead;
-use crate::data_types::{PacketRead, PacketWrite};
+use crate::data_types::{FieldRead, PacketRead, PacketWrite};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Identifier {
@@ -79,7 +80,14 @@ impl PacketWrite for Identifier {
 #[async_trait]
 impl PacketRead for Identifier {
     async fn read_from<R: AsyncRead + Unpin + Send>(stream: &mut R) -> anyhow::Result<Self> {
-        let s = String::read_from(stream).await?;
+        let s = <String as PacketRead>::read_from(stream).await?;
+        Identifier::from_str(&s)
+    }
+}
+
+impl FieldRead for Identifier {
+    fn read_from<R: Read>(stream: &mut R) -> anyhow::Result<Self> {
+        let s = <String as FieldRead>::read_from(stream)?;
         Identifier::from_str(&s)
     }
 }

@@ -1,8 +1,10 @@
+use std::io::Read;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncRead, AsyncReadExt};
-use crate::data_types::{PacketRead, PacketWrite};
+use crate::data_types::{FieldRead, PacketRead, PacketWrite};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct VarInt(pub i32);
 
 impl VarInt {
@@ -39,6 +41,30 @@ impl PacketRead for VarInt {
         }
     }
 }
+
+impl FieldRead for VarInt {
+    fn read_from<R: Read>(reader: &mut R) -> anyhow::Result<Self> {
+        let mut num = 0;
+        let mut received = 0;
+        loop {
+            let mut buf = [0; 1];
+            reader.read_exact(&mut buf)?;
+            let byte = buf[0];
+            let value = (byte & 0x7F) as i32;
+            num |= value << (7 * received);
+
+            received += 1;
+            if received > Self::MAX_SIZE {
+                return Err(anyhow::anyhow!("VarInt too big"));
+            }
+
+            if (byte & 0x80) == 0 {
+                return Ok(VarInt(num));
+            }
+        }
+    }
+}
+
 
 impl PacketWrite for VarInt {
     fn write_to(&self, buf: &mut Vec<u8>) {

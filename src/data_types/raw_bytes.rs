@@ -1,6 +1,7 @@
+use std::io::Read;
 use async_trait::async_trait;
 use tokio::io::{AsyncRead, AsyncReadExt};
-use crate::data_types::{PacketRead, PacketWrite};
+use crate::data_types::{FieldRead, PacketRead, PacketWrite};
 
 /// Represents raw binary data that consumes the stream until EOF.
 /// WARNING: Only use this on a bounded stream (like a Cursor over a fixed buffer).
@@ -13,6 +14,14 @@ impl PacketRead for RawBytes {
     async fn read_from<R: AsyncRead + Unpin + Send>(stream: &mut R) -> anyhow::Result<Self> {
         let mut buf = Vec::new();
         stream.read_to_end(&mut buf).await?;
+        Ok(RawBytes(buf))
+    }
+}
+
+impl FieldRead for RawBytes {
+    fn read_from<R: Read>(stream: &mut R) -> anyhow::Result<Self> {
+        let mut buf = Vec::new();
+        stream.read_to_end(&mut buf)?;
         Ok(RawBytes(buf))
     }
 }
