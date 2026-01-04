@@ -1,28 +1,9 @@
 pub(crate) mod handshake;
 
-use std::io::Cursor;
-use async_trait::async_trait;
 use tokio::io::{AsyncRead, AsyncWriteExt};
 use tokio::net::TcpStream;
 use crate::data_types::{BufferWrite, StreamWrite};
 use crate::data_types::var_int::VarInt;
-/*
-#[async_trait]
-pub trait Packet: Sized + Send + Sync {
-    fn decode(data: &mut Cursor<&[u8]>) -> anyhow::Result<Self>;
-    async fn handle(&self) -> anyhow::Result<()>;
-}
-
-#[async_trait]
-pub trait ReadPacket: Sized {
-    async fn decode<R: AsyncRead + Unpin + Send>(stream: &mut R) -> anyhow::Result<Self>;
-}
-
-#[async_trait]
-pub trait WritePacket {
-    fn encode();
-}
-*/
 
 /// # Send packet
 /// Generic Packet Sender

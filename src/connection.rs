@@ -157,7 +157,7 @@ impl Connection {
     async fn handle_login(&mut self) -> anyhow::Result<()> {
         println!("Handling login");
 
-        // 2
+        // Read "Login start - 0x00"
         let packet_length: VarInt = self.stream.read_type().await?;
         let packet_id: VarInt = self.stream.read_type().await?;
 
@@ -170,7 +170,7 @@ impl Connection {
         println!("Username: {:?}", username);
         println!("UUID: {:?}", uuid);
 
-        // 3
+        // Send "Login Success - 0x02"
         let mut buffer = Vec::new();
 
         buffer.write_type(GameProfile {
@@ -181,7 +181,7 @@ impl Connection {
 
         send_packet(&mut self.stream, 0x02, &buffer).await?;
 
-        // 4
+        // Read "Login acknowledged - 0x03"
         let packet_length: VarInt = self.stream.read_type().await?;
         let packet_id: VarInt = self.stream.read_type().await?;
 
@@ -197,7 +197,7 @@ impl Connection {
     async fn handle_configuration(&mut self) -> anyhow::Result<()> {
         println!("Handling configuration");
 
-        // 5
+        // Read "Plugin message configuration - 0x02"
         let packet_length: VarInt = self.stream.read_type().await?;
 
         let mut packet_buffer = vec![0u8; packet_length.0 as usize];
@@ -231,7 +231,7 @@ impl Connection {
             return Err(anyhow!("Modded packets are not supported yet!"));
         }
 
-        // 6
+        // Read "Client information - 0x00"
         let packet_length: VarInt = self.stream.read_type().await?;
         let packet_id: VarInt = self.stream.read_type().await?;
 
@@ -258,7 +258,7 @@ impl Connection {
         println!("Allow server listings: {:?}", allow_server_listings);
         println!("Particle status: {:?}", particle_status);
 
-        // 7
+        // Send "Plugin message configuration - 0x01"
         let mut payload_buffer = Vec::new();
         "Nullspace".to_string().write_to(&mut payload_buffer);
 
@@ -271,7 +271,7 @@ impl Connection {
 
         send_packet(&mut self.stream, 0x01, &packet_body).await?;
 
-        // 8
+        // Send "Feature flags - 0x0C"
         let mut buffer = Vec::new();
 
         buffer.write_type(vec![
@@ -280,7 +280,7 @@ impl Connection {
 
         send_packet(&mut self.stream, 0x0C, &buffer).await?;
 
-        //9
+        // Send "Known packs - 0x0E"
         let mut buffer = Vec::new();
 
         buffer.write_type(vec![
@@ -293,7 +293,7 @@ impl Connection {
 
         send_packet(&mut self.stream, 0x0E, &buffer).await?;
 
-        // 10
+        // Read "Known packs - 0x07"
         let packet_length: VarInt = self.stream.read_type().await?;
         let packet_id: VarInt = self.stream.read_type().await?;
 
@@ -304,18 +304,18 @@ impl Connection {
 
         println!("Known packs: {:?}", known_packs);
 
-        // 11 & 12
+        // Send "Registry data - 0x07" and "Update tags - 0x0D"
         println!("Sending registries!");
 
         send_all_registries(&mut self.stream).await?;
 
-        // 13
+        // Send "Finish configuration - 0x03"
         println!("Sending 'Finish configuration'!");
 
         let buf = Vec::new();
         send_packet(&mut self.stream, 0x03, &buf).await?;
 
-        // 14
+        // Read "Acknowledge finish configuration - 0x03"
         let packet_length: VarInt = self.stream.read_type().await?;
         let packet_id: VarInt = self.stream.read_type().await?;
 
@@ -331,7 +331,7 @@ impl Connection {
     async fn handle_play(&mut self) -> anyhow::Result<()> {
         println!("Handling play loop");
 
-        // 15
+        // Send "Login (play) - 0x30"
         let mut buffer = Vec::new();
 
         buffer.write_type(2_i32);
@@ -464,6 +464,22 @@ impl Connection {
         }
 
         Ok(())
+    }
+
+    async fn read_next_packet(&mut self) -> anyhow::Result<(i32, Cursor<Vec<u8>>)> {
+        let packet_length: VarInt = self.stream.read_type().await?;
+
+        // Read the number of bytes for the body
+        let mut body_buffer = vec![0u8; packet_length.0 as usize];
+        self.stream.read_exact(&mut body_buffer).await?;
+
+        // Create a cursor to read the body contents safely
+        let mut cursor = Cursor::new(body_buffer);
+
+        // Read the Packet ID from the cursor
+        let packet_id: VarInt = cursor.read_type().await?;
+
+        Ok((packet_id.0, cursor))
     }
 }
 

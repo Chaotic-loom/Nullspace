@@ -28,7 +28,7 @@ S = Servidor
 3. S manda "Login Success - 0x02" con estos datos:
    1. profile: GameProfile
 4. C manda "Login acknowledged - 0x03" vacío.
-5. C manda "Serverbound plugin message configuration - 0x02" con estos datos:
+5. C manda "Plugin message configuration - 0x02" con estos datos:
    1. channel: Identifier
    2. data: ?
 6. C manda "Client information - 0x00" con estos datos:
@@ -41,14 +41,14 @@ S = Servidor
    7. enable_text_filtering: Boolean
    8. allow_server_listings: Boolean
    9. particle_status: VarInt (0: all, 1: decreased, 2: minimal)
-7. S manda "Clientbound plugin message configuration - 0x01" con estos datos:
+7. S manda "Plugin message configuration - 0x01" con estos datos:
    1. channel: Identifier
    2. data: ?
 8. S manda "Feature flags - 0x0C" con estos datos:
    1. feature_flags: Prefixed Array of Identifier
-9. S manda "Clientbound known packs - 0x0E" con estos datos:
+9. S manda "Known packs - 0x0E" con estos datos:
     1. known_packs: {namespace: String(32767), id: String(32767), version: String(32767)} → Prefixed array
-10. C manda "Serverbound known packs - 0x07" con estos datos:
+10. C manda "Known packs - 0x07" con estos datos:
     1. known_packs: {namespace: String(32767), id: String(32767), version: String(32767)} → Prefixed array
 11. S manda "Registry data - 0x07" multiples veces con estos datos:
     1. registry_id: Identifier
@@ -80,3 +80,11 @@ S = Servidor
     20. portal_cooldown: VarInt
     21. sea_level: VarInt
     22. enforces_secure_chat: Boolean
+
+# Stages
+
+1. Handshake
+2. Status
+3. Login
+4. Configuration
+5. Play
