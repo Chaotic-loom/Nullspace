@@ -88,3 +88,7 @@ S = Servidor
 3. Login
 4. Configuration
 5. Play
+
+# TODOS:
+- The server must kick a player if we dont get a keep alive packet for 20 seconds
+- The server should check if the teleport packet request has the same id as the server sent them.

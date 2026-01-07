@@ -1,21 +1,20 @@
 use std::sync::Arc;
-use tokio::net::{TcpListener};
-use crate::connection::{Connection, ConnectionPhase};
-use crate::packets::configuration::acknowledge_finish_configuration_request::AcknowledgeFinishConfigurationRequestPacket;
-use crate::packets::configuration::client_information_request::ClientInformationRequestPacket;
-use crate::packets::configuration::known_packs_request::KnownPacksRequestPacket;
-use crate::packets::PacketRegistry;
-use crate::packets::configuration::plugin_message_configuration_request::{PluginMessageConfigurationRequestPacket};
-use crate::packets::handshake::HandshakePacket;
-use crate::packets::login::login_acknowledged_request::LoginAcknowledgedRequestPacket;
-use crate::packets::login::login_start_request::LoginStartRequestPacket;
-use crate::packets::play::teleport_confirmation_request::TeleportConfirmationRequestPacket;
-use crate::packets::status::ping_request::PingRequestPacket;
-use crate::packets::status::status_request::StatusRequestPacket;
+use tokio::net::TcpListener;
+use networking::connection::{Connection, ConnectionPhase};
+use networking::packets::configuration::acknowledge_finish_configuration_request::AcknowledgeFinishConfigurationRequestPacket;
+use networking::packets::configuration::client_information_request::ClientInformationRequestPacket;
+use networking::packets::configuration::known_packs_request::KnownPacksRequestPacket;
+use networking::packets::PacketRegistry;
+use networking::packets::configuration::plugin_message_configuration_request::PluginMessageConfigurationRequestPacket;
+use networking::packets::handshake::HandshakePacket;
+use networking::packets::login::login_acknowledged_request::LoginAcknowledgedRequestPacket;
+use networking::packets::login::login_start_request::LoginStartRequestPacket;
+use networking::packets::play::set_player_position_and_rotation_request::SetPlayerPositionAndRotationRequestPacket;
+use networking::packets::play::teleport_confirmation_request::TeleportConfirmationRequestPacket;
+use networking::packets::status::ping_request::PingRequestPacket;
+use networking::packets::status::status_request::StatusRequestPacket;
 
-mod data_types;
-mod packets;
-mod connection;
+mod networking;
 
 /// # Connection listener
 /// Listens for each client connection and handles them until they close.
@@ -70,4 +69,5 @@ fn register_all(registry: &mut PacketRegistry) {
 
     // Play
     registry.register::<TeleportConfirmationRequestPacket>(ConnectionPhase::Play, 0x00);
+    registry.register::<SetPlayerPositionAndRotationRequestPacket>(ConnectionPhase::Play, 0x1E);
 }
