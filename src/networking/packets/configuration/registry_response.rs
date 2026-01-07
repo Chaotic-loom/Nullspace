@@ -1,9 +1,8 @@
 use std::collections::HashSet;
-use tokio::net::TcpStream;
+use crate::networking::connection::Connection;
 use crate::networking::data_types::registries::RegistryData;
-use crate::networking::packets::send_packet;
 
-pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
+pub async fn send_all_registries(connection: &mut Connection) -> anyhow::Result<()> {
     println!("Sending Registry Data...");
 
     let whitelist: HashSet<&'static str> = HashSet::from([
@@ -35,7 +34,7 @@ pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
         }
 
         if let Some(file) = RegistryData::get(name) {
-            send_packet(stream, 0x07, &file.data).await?;
+            connection.send_raw_packet(0x07, &file.data).await?;
             println!("Sent registry: {}", name);
         }
     }
@@ -43,7 +42,7 @@ pub async fn send_all_registries(stream: &mut TcpStream) -> anyhow::Result<()> {
     // Sends the "Update tags - 0x0D" packet
     if let Some(file) = RegistryData::get("packet_tags.bin") {
         println!("Sending Tag Update...");
-        send_packet(stream, 0x0D, &file.data).await?;
+        connection.send_raw_packet(0x0D, &file.data).await?;
     }
 
     Ok(())

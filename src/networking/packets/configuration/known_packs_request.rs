@@ -27,7 +27,7 @@ impl PacketHandler for KnownPacksRequestPacket {
         println!("Known packs: {:?}", self.known_packs);
 
         // Send "Registry data - 0x07" and "Update tags - 0x0D"
-        send_all_registries(&mut ctx.stream).await?;
+        send_all_registries(ctx).await?;
 
         // Send "Finish configuration - 0x03"
         ctx.send_packet(0x03, FinishConfigurationResponsePacket { }).await?;

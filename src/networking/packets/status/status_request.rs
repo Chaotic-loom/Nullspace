@@ -2,8 +2,7 @@ use std::io::Cursor;
 use async_trait::async_trait;
 use serde_json::json;
 use crate::networking::connection::{Connection};
-use crate::networking::data_types::BufferWrite;
-use crate::networking::packets::{send_packet, Packet, PacketHandler};
+use crate::networking::packets::{Packet, PacketHandler};
 use crate::networking::packets::status::status_response::StatusResponsePacket;
 
 pub struct StatusRequestPacket {}
